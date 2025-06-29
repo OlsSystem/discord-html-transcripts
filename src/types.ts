@@ -1,4 +1,4 @@
-import type { AttachmentBuilder, Message } from 'discord.js';
+import type { AttachmentBuilder } from 'discord.js';
 import type { RenderMessageContext } from './generator';
 
 export type AttachmentTypes = 'audio' | 'video' | 'image' | 'file';
@@ -31,7 +31,7 @@ export type GenerateFromMessagesOptions<T extends ExportReturnType> = Partial<{
   /**
    * Callbacks for resolving channels, users, and roles
    */
-  callbacks: Partial<RenderMessageContext['callbacks']>;
+  callbacks: RenderMessageContext['callbacks'];
 
   /**
    * The name of the file to return if returnType is ExportReturnType.ATTACHMENT
@@ -72,11 +72,5 @@ export type CreateTranscriptOptions<T extends ExportReturnType> = Partial<
      * The max amount of messages to fetch. Use `-1` to recursively fetch.
      */
     limit: number;
-
-    /**
-     * Filter messages of the channel
-     * @default (() => true)
-     */
-    filter: (message: Message<boolean>) => boolean;
   }
 >;

@@ -1,5 +1,5 @@
 import {
-  DiscordEmbed as DiscordEmbedComponent,
+  DiscordEmbed,
   DiscordEmbedDescription,
   DiscordEmbedField,
   DiscordEmbedFields,
@@ -9,16 +9,16 @@ import type { Embed, Message } from 'discord.js';
 import React from 'react';
 import type { RenderMessageContext } from '..';
 import { calculateInlineIndex } from '../../utils/embeds';
-import MessageContent, { RenderType } from './content';
+import renderContent, { RenderType } from './content';
 
 type RenderEmbedContext = RenderMessageContext & {
   index: number;
   message: Message;
 };
 
-export async function DiscordEmbed({ embed, context }: { embed: Embed; context: RenderEmbedContext }) {
+export async function renderEmbed(embed: Embed, context: RenderEmbedContext) {
   return (
-    <DiscordEmbedComponent
+    <DiscordEmbed
       embedTitle={embed.title ?? undefined}
       slot="embeds"
       key={`${context.message.id}-e-${context.index}`}
@@ -33,23 +33,25 @@ export async function DiscordEmbed({ embed, context }: { embed: Embed; context: 
       {/* Description */}
       {embed.description && (
         <DiscordEmbedDescription slot="description">
-          <MessageContent content={embed.description} context={{ ...context, type: RenderType.EMBED }} />
+          {await renderContent(embed.description, { ...context, type: RenderType.EMBED })}
         </DiscordEmbedDescription>
       )}
 
       {/* Fields */}
       {embed.fields.length > 0 && (
         <DiscordEmbedFields slot="fields">
-          {embed.fields.map(async (field, id) => (
-            <DiscordEmbedField
-              key={`${context.message.id}-e-${context.index}-f-${id}`}
-              fieldTitle={field.name}
-              inline={field.inline}
-              inlineIndex={calculateInlineIndex(embed.fields, id)}
-            >
-              <MessageContent content={field.value} context={{ ...context, type: RenderType.EMBED }} />
-            </DiscordEmbedField>
-          ))}
+          {await Promise.all(
+            embed.fields.map(async (field, id) => (
+              <DiscordEmbedField
+                key={`${context.message.id}-e-${context.index}-f-${id}`}
+                fieldTitle={field.name}
+                inline={field.inline}
+                inlineIndex={calculateInlineIndex(embed.fields, id)}
+              >
+                {await renderContent(field.value, { ...context, type: RenderType.EMBED })}
+              </DiscordEmbedField>
+            ))
+          )}
         </DiscordEmbedFields>
       )}
 
@@ -63,6 +65,6 @@ export async function DiscordEmbed({ embed, context }: { embed: Embed; context: 
           {embed.footer.text}
         </DiscordEmbedFooter>
       )}
-    </DiscordEmbedComponent>
+    </DiscordEmbed>
   );
 }

@@ -3,12 +3,10 @@ import { ButtonStyle, ComponentType, type MessageActionRowComponent, type Action
 import React from 'react';
 import { parseDiscordEmoji } from '../../utils/utils';
 
-export default function ComponentRow({ row, id }: { row: ActionRow<MessageActionRowComponent>; id: number }) {
+export default function renderComponentRow(row: ActionRow<MessageActionRowComponent>, id: number) {
   return (
     <DiscordActionRow key={id}>
-      {row.components.map((component, id) => (
-        <Component component={component} id={id} key={id} />
-      ))}
+      {row.components.map((component, id) => renderComponent(component, id))}
     </DiscordActionRow>
   );
 }
@@ -21,7 +19,7 @@ const ButtonStyleMapping = {
   [ButtonStyle.Link]: 'secondary',
 } as const;
 
-export function Component({ component, id }: { component: MessageActionRowComponent; id: number }) {
+export function renderComponent(component: MessageActionRowComponent, id: number) {
   if (component.type === ComponentType.Button) {
     return (
       <DiscordButton

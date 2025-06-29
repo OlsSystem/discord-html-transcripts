@@ -1,16 +1,11 @@
 import { AttachmentBuilder, version, Collection, type Channel, type Message, type TextBasedChannel } from 'discord.js';
-import DiscordMessages from './generator';
+import renderMessages from './generator';
 import {
   ExportReturnType,
   type CreateTranscriptOptions,
   type GenerateFromMessagesOptions,
   type ObjectType,
 } from './types';
-import { TranscriptImageDownloader, type ResolveImageCallback } from './downloader/images';
-
-// re-exports
-export { default as DiscordMessages } from './generator/transcript';
-export { TranscriptImageDownloader } from './downloader/images';
 
 // version check
 const versionPrefix = version.split('.')[0];
@@ -38,26 +33,14 @@ export async function generateFromMessages<T extends ExportReturnType = ExportRe
   // turn messages into an array
   const transformedMessages = messages instanceof Collection ? Array.from(messages.values()) : messages;
 
-  // figure out how the user wants images saved
-  let resolveImageSrc: ResolveImageCallback = options.callbacks?.resolveImageSrc ?? ((attachment) => attachment.url);
-  if (options.saveImages) {
-    if (options.callbacks?.resolveImageSrc) {
-      console.warn(
-        `[discord-html-transcripts] You have specified both saveImages and resolveImageSrc, please only specify one. resolveImageSrc will be used.`
-      );
-    } else {
-      resolveImageSrc = new TranscriptImageDownloader().build();
-      console.log('Using default downloader');
-    }
-  }
+  // const startTime = process.hrtime();
 
   // render the messages
-  const html = await DiscordMessages({
+  const html = await renderMessages({
     messages: transformedMessages,
     channel,
     saveImages: options.saveImages ?? false,
     callbacks: {
-      resolveImageSrc,
       resolveChannel: async (id) => channel.client.channels.fetch(id).catch(() => null),
       resolveUser: async (id) => channel.client.users.fetch(id).catch(() => null),
       resolveRole: channel.isDMBased() ? () => null : async (id) => channel.guild?.roles.fetch(id).catch(() => null),
@@ -72,11 +55,7 @@ export async function generateFromMessages<T extends ExportReturnType = ExportRe
 
   // get the time it took to render the messages
   // const renderTime = process.hrtime(startTime);
-  // console.log(
-  //   `[discord-html-transcripts] Rendered ${transformedMessages.length} messages in ${renderTime[0]}s ${
-  //     renderTime[1] / 1000000
-  //   }ms`
-  // );
+  // console.log(`[discord-html-transcripts] Rendered ${transformedMessages.length} messages in ${renderTime[0]}s ${renderTime[1] / 1000000}ms`);
 
   // return the html in the specified format
   if (options.returnType === ExportReturnType.Buffer) {
@@ -111,7 +90,7 @@ export async function createTranscript<T extends ExportReturnType = ExportReturn
   // fetch messages
   let allMessages: Message[] = [];
   let lastMessageId: string | undefined;
-  const { limit, filter } = options;
+  const { limit } = options;
   const resolvedLimit = typeof limit === 'undefined' || limit === -1 ? Infinity : limit;
 
   // until there are no more messages, keep fetching
@@ -123,11 +102,9 @@ export async function createTranscript<T extends ExportReturnType = ExportReturn
 
     // fetch messages
     const messages = await channel.messages.fetch(fetchLimitOptions);
-    const filteredMessages = typeof filter === 'function' ? messages.filter(filter) : messages;
 
     // add the messages to the array
-    allMessages.push(...filteredMessages.values());
-    // Get the last key of 'messages', not 'filteredMessages' because you will be refetching the same messages
+    allMessages.push(...messages.values());
     lastMessageId = messages.lastKey();
 
     // if there are no more messages, break

@@ -4,14 +4,11 @@ import { createTranscript } from '../src';
 import { config } from 'dotenv';
 config();
 
-const { GuildMessages, Guilds, MessageContent } = discord.GatewayIntentBits;
-
 const client = new discord.Client({
-  intents: [GuildMessages, Guilds, MessageContent],
+  intents: [discord.IntentsBitField.Flags.GuildMessages, discord.IntentsBitField.Flags.Guilds],
 });
 
 client.on('ready', async () => {
-  console.log('Fetching channel: ', process.env.CHANNEL!);
   const channel = await client.channels.fetch(process.env.CHANNEL!);
 
   if (!channel || !channel.isTextBased()) {
@@ -19,16 +16,9 @@ client.on('ready', async () => {
     process.exit(1);
   }
 
-  console.time('transcript');
+  const attachment = await createTranscript(channel);
 
-  const attachment = await createTranscript(channel, {
-    // options go here
-  });
-
-  console.timeEnd('transcript');
-
-  await (channel as discord.TextChannel).send({
-    content: 'Here is the transcript',
+  await channel.send({
     files: [attachment],
   });
 

@@ -97,8 +97,7 @@ const attachment = await discordTranscripts.createTranscript(channel, {
       resolveRole: (roleId: string) => Awaitable<Role | null>
     },
     poweredBy: true, // Whether to include the "Powered by discord-html-transcripts" footer
-    hydrate: true, // Whether to hydrate the html server-side
-    filter: (message) => true // Filter messages, e.g. (message) => !message.author.bot
+    ssr: true // Whether to hydrate the html server-side
 });
 ```
 
@@ -106,7 +105,7 @@ const attachment = await discordTranscripts.createTranscript(channel, {
 
 ```js
 const attachment = await discordTranscripts.generateFromMessages(messages, channel, {
-  // Same as createTranscript, except no limit or filter
+  // Same as createTranscript, except no limit
 });
 ```
 

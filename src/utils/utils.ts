@@ -1,9 +1,6 @@
 import type { APIMessageComponentEmoji, Emoji } from 'discord.js';
+import { request } from 'undici';
 import twemoji from 'twemoji';
-
-export function isDefined<T>(value: T | undefined | null): value is T {
-  return value !== undefined && value !== null;
-}
 
 export function formatBytes(bytes: number, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -31,16 +28,24 @@ export function parseDiscordEmoji(emoji: Emoji | APIMessageComponentEmoji) {
   return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${codepoints}.svg`;
 }
 
-/**
- * Converts a stream to a string
- * @param stream - The stream to convert
- */
-export function streamToString(stream: NodeJS.ReadableStream) {
-  const chunks: Buffer[] = [];
+export async function downloadImageToDataURL(url: string): Promise<string | null> {
+  const response = await request(url);
 
-  return new Promise<string>((resolve, reject) => {
-    stream.on('data', (chunk) => chunks.push(chunk));
-    stream.on('error', reject);
-    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-  });
+  const dataURL = await response.body
+    .arrayBuffer()
+    .then((res) => {
+      const data = Buffer.from(res).toString('base64');
+      const mime = response.headers['content-type'];
+
+      return `data:${mime};base64,${data}`;
+    })
+    .catch((err) => {
+      if (!process.env.HIDE_TRANSCRIPT_ERRORS) {
+        console.error(`[discord-html-transcripts] Failed to download image for transcript: `, err);
+      }
+
+      return null;
+    });
+
+  return dataURL;
 }
